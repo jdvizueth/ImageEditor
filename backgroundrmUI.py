@@ -167,7 +167,7 @@ class BaseFrame(tk.Frame):
         # UI elements which appear in all frames
         # We don't specify the position here, because it varies among
         # different frames
-        self.status = tk.Label(self, text='Load an image to remove Background')
+        self.status = tk.Label(self, text='Load an image to remove background')
 
         self.thresholdLabel = tk.Label(self, text='Threshold (10^x):')
         self.thresholdSlider = tk.Scale(self, from_=-4, to=0, resolution=0.1,
@@ -193,30 +193,20 @@ class BackgroundRemoveFrame(BaseFrame):
                                          command=self.loadImage, width=BUTTON_WIDTH)
         self.loadImageButton.grid(row=0, column=0, sticky=tk.W+tk.E)
 
-        self.clearKeypointsButton = tk.Button(self, text='Clear Keypoints',
-                                              command=self.reloadImage, width=BUTTON_WIDTH)
-        self.clearKeypointsButton.grid(row=0, column=1, sticky=tk.W+tk.E)
-
-        self.screenshotButton = tk.Button(self, text='Screenshot',
+        self.screenshotButton = tk.Button(self, text='Save Image',
                                           command=self.screenshot, width=BUTTON_WIDTH)
         self.screenshotButton.grid(row=0, column=4, sticky=tk.W+tk.E)
 
         self.computeRemoverButton = tk.Button(
-            self, text='Compute', command=self.computeRemove, width=BUTTON_WIDTH)
+            self, text='Remove Background', command=self.computeRemove, width=BUTTON_WIDTH)
 
-        self.computeRemoverButton.grid(row=0, column=4, sticky=tk.W+tk.E)
-
-        self.thresholdLabel.grid(row=1, column=3, sticky=tk.W)
-        self.thresholdSlider.grid(row=1, column=4, columnspan=2,
-                                  sticky=tk.W+tk.E)
+        self.computeRemoverButton.grid(row=0, column=1, sticky=tk.W+tk.E)
 
         self.imageCanvas.grid(row=3, columnspan=6, sticky=tk.N+tk.S+tk.E+tk.W)
 
         self.status.grid(row=4, columnspan=6, sticky=tk.S)
 
         self.image = None
-
-        self.keypoints = None
 
     def loadImage(self):
         filename = tkFileDialog.askopenfilename(parent=self.root,
@@ -230,7 +220,6 @@ class BackgroundRemoveFrame(BaseFrame):
         if self.image is not None:
             self.keypoints = None
             self.image = image
-            print('has been switched')
             self.imageCanvas.drawCVImage(self.image)
 
     def screenshot(self):
@@ -239,7 +228,7 @@ class BackgroundRemoveFrame(BaseFrame):
                                                       filetypes=supportedFiletypes, defaultextension=".png")
             if filename:
                 self.imageCanvas.writeToFile(filename)
-                self.setStatus('Saved screenshot to ' + filename)
+                self.setStatus('Saved image to ' + filename)
         else:
             error('Load image before taking a screenshot!')
 
@@ -264,7 +253,8 @@ class BackgroundUIFrame(tk.Frame):
         self.backgroundRemoverFrame = BackgroundRemoveFrame(
             self.notebook, root)
 
-        self.notebook.add(self.backgroundRemoverFrame, text='RemoveBackground')
+        self.notebook.add(self.backgroundRemoverFrame,
+                          text='Background Removal Tab')
 
         self.notebook.grid(row=0, sticky=tk.N+tk.S+tk.E+tk.W)
 
