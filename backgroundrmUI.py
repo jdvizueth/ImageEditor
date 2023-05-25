@@ -244,13 +244,6 @@ class CropImage(BaseFrame):
                           (self.end_x, self.end_y), (0, 255, 0), 2)
 
             cv2.imshow('Press q to quit, c to crop', self.image)
-            # # Crop the image
-            # cropped = self.crop_image(
-            #     self.image, self.start_x, self.start_y, self.end_x, self.end_y)
-
-            # # Show the cropped image
-            # cv2.imshow('Cropped Image', cropped)
-            # cv2.waitKey(0)
 
     def croppingImage(self):
         if self.image is not None:
