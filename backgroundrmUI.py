@@ -206,7 +206,7 @@ class CropImage(BaseFrame):
 
         self.cropButton = tk.Button(
             self, text='Crop Image', command=self.croppingImage, width=BUTTON_WIDTH)
-        self.cropButton.grid(row=0, column=4, sticky=tk.W+tk.E)
+        self.cropButton.grid(row=0, column=1, sticky=tk.W+tk.E)
 
         self.imageCanvas.grid(row=3, columnspan=6, sticky=tk.N+tk.S+tk.E+tk.W)
 
@@ -253,28 +253,34 @@ class CropImage(BaseFrame):
             # cv2.waitKey(0)
 
     def croppingImage(self):
-        self.image2 = np.copy(self.image)
-        cv2.namedWindow('Press q to quit, c to crop')
-        cv2.setMouseCallback('Press q to quit, c to crop', self.mouse_callback)
+        if self.image is not None:
+            self.image2 = np.copy(self.image)
+            cv2.namedWindow('Press q to quit, c to crop')
+            cv2.setMouseCallback(
+                'Press q to quit, c to crop', self.mouse_callback)
 
-        while True:
-            cv2.imshow('Press q to quit, c to crop', self.image)
+            while True:
+                cv2.imshow('Press q to quit, c to crop', self.image)
 
-            key = cv2.waitKey(0) & 0xFF
+                key = cv2.waitKey(0) & 0xFF
 
-            if key == ord('q'):
-                self.image = np.copy(self.image2)
-                break
+                if key == ord('q'):
+                    self.image = np.copy(self.image2)
+                    break
 
-            if key == ord('c') and not self.cropping:
-                cropped_image = self.image[self.start_y:self.end_y,
-                                           self.start_x:self.end_x]
-                self.image = np.copy(self.image2)
-                cv2.imshow('Cropped Image', cropped_image)
-                cv2.waitKey(0)
-                break
+                if key == ord('c') and not self.cropping:
+                    cropped_image = self.crop_image(
+                        self.image2, self.start_x, self.start_y, self.end_x, self.end_y)
+                    # self.image = np.copy(self.image2)
+                    # cv2.imshow('Cropped Image', cropped_image)
+                    self.image = np.copy(cropped_image)
+                    self.imageCanvas.drawCVImage(cropped_image)
+                    # cv2.waitKey(0)
+                    break
 
-        cv2.destroyAllWindows()
+            cv2.destroyAllWindows()
+        else:
+            error('Load image before cropping!')
 
     def loadImage(self):
         filename = tkFileDialog.askopenfilename(
