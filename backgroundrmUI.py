@@ -185,6 +185,123 @@ class BaseFrame(tk.Frame):
         self.status.configure(text=text)
 
 
+class CropImage(BaseFrame):
+    def __init__(self, parent, root):
+        BaseFrame.__init__(self, parent, root)
+
+        # Global variables to store the coordinates
+        self.start_x, self.start_y = -1, -1
+        self.end_x, self.end_y = -1, -1
+        self.cropping = False
+        self.image = None
+        self.image2 = None
+
+        self.loadImageButton = tk.Button(self, text='Load Image',
+                                         command=self.loadImage, width=BUTTON_WIDTH)
+        self.loadImageButton.grid(row=0, column=0, sticky=tk.W+tk.E)
+
+        self.screenshotButton = tk.Button(self, text='Save Image',
+                                          command=self.screenshot, width=BUTTON_WIDTH)
+        self.screenshotButton.grid(row=0, column=4, sticky=tk.W+tk.E)
+
+        self.cropButton = tk.Button(
+            self, text='Crop Image', command=self.croppingImage, width=BUTTON_WIDTH)
+        self.cropButton.grid(row=0, column=4, sticky=tk.W+tk.E)
+
+        self.imageCanvas.grid(row=3, columnspan=6, sticky=tk.N+tk.S+tk.E+tk.W)
+
+        self.status.grid(row=4, columnspan=6, sticky=tk.S)
+
+    def crop_image(self, image, start_x, start_y, end_x, end_y):
+        cropped_image = image[start_y:end_y, start_x:end_x]
+        return cropped_image
+
+    def mouse_callback(self, event, x, y, flags, param):
+        # Access the global variables
+
+        if event == cv2.EVENT_LBUTTONDOWN:
+            # Initialize the starting coordinates
+            self.start_x, self.start_y = x, y
+            self.end_x, self.end_y = x, y
+            self.image = np.copy(self.image2)
+            cv2.imshow('Press q to quit, c to crop', self.image)
+            self.cropping = True
+
+        elif event == cv2.EVENT_LBUTTONUP:
+            # Update the ending coordinates and indicate that cropping is finished
+            self.end_x, self.end_y = x, y
+            self.cropping = False
+
+            # Ensure the coordinates are valid (start < end)
+            self.start_x, self.start_y = min(
+                self.start_x, self.end_x), min(self.start_y, self.end_y)
+            self.end_x, self.end_y = max(
+                self.start_x, self.end_x), max(self.start_y, self.end_y)
+
+            self.image = np.copy(self.image2)
+
+            cv2.rectangle(self.image, (self.start_x, self.start_y),
+                          (self.end_x, self.end_y), (0, 255, 0), 2)
+
+            cv2.imshow('Press q to quit, c to crop', self.image)
+            # # Crop the image
+            # cropped = self.crop_image(
+            #     self.image, self.start_x, self.start_y, self.end_x, self.end_y)
+
+            # # Show the cropped image
+            # cv2.imshow('Cropped Image', cropped)
+            # cv2.waitKey(0)
+
+    def croppingImage(self):
+        self.image2 = np.copy(self.image)
+        cv2.namedWindow('Press q to quit, c to crop')
+        cv2.setMouseCallback('Press q to quit, c to crop', self.mouse_callback)
+
+        while True:
+            cv2.imshow('Press q to quit, c to crop', self.image)
+
+            key = cv2.waitKey(0) & 0xFF
+
+            if key == ord('q'):
+                self.image = np.copy(self.image2)
+                break
+
+            if key == ord('c') and not self.cropping:
+                cropped_image = self.image[self.start_y:self.end_y,
+                                           self.start_x:self.end_x]
+                self.image = np.copy(self.image2)
+                cv2.imshow('Cropped Image', cropped_image)
+                cv2.waitKey(0)
+                break
+
+        cv2.destroyAllWindows()
+
+    def loadImage(self):
+        filename = tkFileDialog.askopenfilename(
+            parent=self.root, filetypes=supportedFiletypes)
+        if filename and os.path.isfile(filename):
+            self.image = cv2.imread(filename)
+            self.imageCanvas.drawCVImage(self.image)
+
+            self.setStatus('Loaded ' + filename)
+
+    def reloadImage(self, image):
+        if self.image is not None:
+            self.keypoints = None
+            self.image = image
+            self.imageCanvas.drawCVImage(self.image)
+
+    def screenshot(self):
+        if self.image is not None:
+            filename = tkFileDialog.asksaveasfilename(parent=self.root,
+                                                      filetypes=supportedFiletypes, defaultextension=".png")
+            if filename:
+                self.imageCanvas.writeToFile(filename)
+                self.setStatus('Saved image to ' + filename)
+        else:
+            error('Load image before taking a screenshot!')
+
+
 class BackgroundRemoveFrame(BaseFrame):
     def __init__(self, parent, root):
         BaseFrame.__init__(self, parent, root)
@@ -255,6 +372,10 @@ class BackgroundUIFrame(tk.Frame):
 
         self.notebook.add(self.backgroundRemoverFrame,
                           text='Background Removal Tab')
+
+        self.cropFrame = CropImage(self.notebook, root)
+
+        self.notebook.add(self.cropFrame, text='Cropping Frame')
 
         self.notebook.grid(row=0, sticky=tk.N+tk.S+tk.E+tk.W)
 
